@@ -51,6 +51,7 @@ export class OutletAccessory {
       // Revert optimistic update on failure
       device.power = !targetState;
       this.updateCharacteristicValue(this.platform.Characteristic.On, !targetState);
+      this.updateCharacteristicValue(this.platform.Characteristic.OutletInUse, !targetState);
       throw new this.platform.api.hap.HapStatusError(
         this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
       );

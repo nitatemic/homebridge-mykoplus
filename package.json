@@ -38,6 +38,7 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "watchman": false
   }
 }

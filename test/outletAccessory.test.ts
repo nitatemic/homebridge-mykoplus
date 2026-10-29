@@ -154,6 +154,7 @@ describe('OutletAccessory', () => {
 
       expect(mockPlatform.log.error).toHaveBeenCalled();
       expect(mockOutletService.updateValue).toHaveBeenCalledWith('On', false);
+      expect(mockOutletService.updateValue).toHaveBeenCalledWith('OutletInUse', false);
       expect(device.power).toBe(false);
     });
 
