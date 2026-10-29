@@ -32,7 +32,7 @@ jspm_packages/
 # ==========================================
 # Build & Distribution Outputs
 # ==========================================
-dist/
+# dist/ is tracked so Homebridge can install directly from GitHub without running tsc
 build/
 out/
 bin/

@@ -13,6 +13,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "test": "jest",
     "test:auth": "ts-node scripts/test-auth.ts"

@@ -1,0 +1,1 @@
+{"version":3,"file":"platformAccessory.d.ts","sourceRoot":"","sources":["../src/platformAccessory.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,YAAY,CAAC;AAC/C,OAAO,EAAE,UAAU,EAAE,MAAM,aAAa,CAAC;AAEzC,MAAM,WAAW,4BAA4B;IAC3C,MAAM,EAAE,UAAU,CAAC;CACpB;AAED,MAAM,MAAM,qBAAqB,GAAG,iBAAiB,CAAC,4BAA4B,CAAC,CAAC;AAEpF,cAAc,+BAA+B,CAAC"}
