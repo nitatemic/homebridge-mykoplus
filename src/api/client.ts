@@ -81,10 +81,14 @@ export class MykoClient {
     throw new Error(`Myko+ login failed: ${sanitizeLogMessage(lastError?.message || 'Unknown error')}`);
   }
 
-  public async getDevices(): Promise<MykoDevice[]> {
-    if (!this.session || !this.session.accessToken) {
+  private async ensureAuthenticated(): Promise<void> {
+    if (!this.session || !this.session.accessToken || Date.now() >= this.session.expiresAt - 60000) {
       await this.login();
     }
+  }
+
+  public async getDevices(): Promise<MykoDevice[]> {
+    await this.ensureAuthenticated();
 
     try {
       return await this.fetchDevicesWithAuth();
@@ -98,9 +102,7 @@ export class MykoClient {
   }
 
   public async getDevice(deviceId: string): Promise<MykoDevice | null> {
-    if (!this.session || !this.session.accessToken) {
-      await this.login();
-    }
+    await this.ensureAuthenticated();
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
@@ -138,9 +140,7 @@ export class MykoClient {
   }
 
   public async setDevicePower(deviceId: string, power: boolean): Promise<boolean> {
-    if (!this.session || !this.session.accessToken) {
-      await this.login();
-    }
+    await this.ensureAuthenticated();
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -149,7 +149,8 @@ export class MykoClient {
       'User-Agent': 'homebridge-mykoplus/1.0.0',
     };
 
-    const body = JSON.stringify({ parameters: { power } });
+    const payload = this.buildPowerCommand(deviceId, power);
+    const body = JSON.stringify({ parameters: payload.parameters });
 
     let response = await fetch(`${this.baseUrl}/v1/devices/${deviceId}/state`, {
       method: 'PATCH',
@@ -169,7 +170,12 @@ export class MykoClient {
       });
     }
 
-    return response.ok;
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error(`Failed to set device power: HTTP ${response.status} ${sanitizeLogMessage(errText)}`);
+    }
+
+    return true;
   }
 
   public parseRawDevice(raw: any): MykoDevice {
