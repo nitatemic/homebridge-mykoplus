@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
   publish:
-    name: Publish Package
+    name: Publish to npm (Trusted Publishing)
     needs: test-and-build
     runs-on: ubuntu-latest
     permissions:
@@ -42,11 +42,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js with npm Registry
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
 
       - name: Install dependencies
@@ -55,7 +54,8 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public || npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Upgrade npm CLI to latest
+        run: npm install -g npm@latest
+
+      - name: Publish to npm via OIDC (Trusted Publishing)
+        run: npm publish --provenance --access public

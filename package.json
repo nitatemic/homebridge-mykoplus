@@ -31,6 +31,14 @@
   },
   "author": "Alexandre de Lemeny-Makedone",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nitatemic/homebridge-mykoplus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nitatemic/homebridge-mykoplus/issues"
+  },
+  "homepage": "https://github.com/nitatemic/homebridge-mykoplus#readme",
   "publishConfig": {
     "access": "public"
   },
