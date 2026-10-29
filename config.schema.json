@@ -1,0 +1,34 @@
+{
+  "pluginAlias": "MykoPlusPlatform",
+  "pluginType": "platform",
+  "headerDisplay": "Myko+ Homebridge Integration",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Platform Name",
+        "type": "string",
+        "default": "MykoPlus",
+        "required": true
+      },
+      "email": {
+        "title": "Myko+ Account Email",
+        "type": "string",
+        "format": "email",
+        "required": true
+      },
+      "password": {
+        "title": "Myko+ Account Password",
+        "type": "string",
+        "required": true
+      },
+      "pollInterval": {
+        "title": "Polling Interval (seconds)",
+        "type": "integer",
+        "default": 30,
+        "minimum": 5,
+        "maximum": 300
+      }
+    }
+  }
+}
