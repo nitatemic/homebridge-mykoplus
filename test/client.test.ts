@@ -55,4 +55,17 @@ describe('MykoClient device parsing', () => {
     expect(parsed.power).toBe(false);
     expect(parsed.type).toBe('outlet');
   });
+
+  it('should throw an error in fetchDevicesWithAuth if userId cannot be determined', async () => {
+    const client = new MykoClient({ email: 'test@example.com', password: 'test' });
+    (client as any).session = {
+      accessToken: 'dummy-token',
+      expiresAt: Date.now() + 600000,
+    };
+    (client as any).userId = null;
+
+    await expect((client as any).fetchDevicesWithAuth()).rejects.toThrow(
+      'User ID could not be determined from authentication session',
+    );
+  });
 });

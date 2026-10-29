@@ -17,4 +17,13 @@ describe('API Security', () => {
     expect(sanitized).not.toContain('eyJhbGciOiJIUzI1NiJ9.test.sig');
     expect(sanitized).toContain('[REDACTED]');
   });
+
+  it('should redact JSON formatted credentials and tokens', () => {
+    const raw = '{"password": "secret123", "token": "secretToken456", "email": "user@example.com"}';
+    const sanitized = sanitizeLogMessage(raw);
+    expect(sanitized).not.toContain('secret123');
+    expect(sanitized).not.toContain('secretToken456');
+    expect(sanitized).toContain('user@example.com');
+    expect(sanitized).toBe('{"password": "[REDACTED]", "token": "[REDACTED]", "email": "user@example.com"}');
+  });
 });

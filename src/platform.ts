@@ -45,6 +45,10 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
       this.log.debug('Executed didFinishLaunching callback');
       this.discoverDevices();
     });
+
+    this.api.on('shutdown', () => {
+      this.stopPolling();
+    });
   }
 
   configureAccessory(accessory: PlatformAccessory): void {

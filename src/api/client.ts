@@ -4,8 +4,7 @@ const DEFAULT_BASE_URL = 'https://mobileapi1.mykoapp.kingfisher.com';
 
 export function sanitizeLogMessage(message: string): string {
   return message
-    .replace(/(password\s*[:=]?\s*)([^\s&,]+)/gi, '$1[REDACTED]')
-    .replace(/(token\s*[:=]?\s*)([^\s&,]+)/gi, '$1[REDACTED]')
+    .replace(/(["']?(?:password|token)["']?\s*[:=]?\s*["']?)([^"',\s&}]+)/gi, '$1[REDACTED]')
     .replace(/eyJ[a-zA-Z0-9_.-]+/g, '[REDACTED]');
 }
 
@@ -264,6 +263,10 @@ export class MykoClient {
       throw new Error('Not authenticated');
     }
 
+    if (!this.userId) {
+      throw new Error('User ID could not be determined from authentication session');
+    }
+
     const headers: Record<string, string> = {
       Accept: 'application/json',
       Authorization: `Bearer ${this.session.accessToken}`,
@@ -271,66 +274,62 @@ export class MykoClient {
     };
 
     // 1. Direct user devices endpoint /v1/users/{userId}/devices
-    if (this.userId) {
-      const response = await fetch(`${this.baseUrl}/v1/users/${this.userId}/devices`, {
-        headers,
-        signal: AbortSignal.timeout(10000),
-      });
+    const response = await fetch(`${this.baseUrl}/v1/users/${this.userId}/devices`, {
+      headers,
+      signal: AbortSignal.timeout(10000),
+    });
 
-      if (response.status === 401) {
-        const error = new Error('Unauthorized');
-        (error as any).status = 401;
-        throw error;
-      }
+    if (response.status === 401) {
+      const error = new Error('Unauthorized');
+      (error as any).status = 401;
+      throw error;
+    }
 
-      if (response.ok) {
-        const data = (await response.json()) as any;
-        const rawDevices = Array.isArray(data) ? data : (data.devices || data.items || data.data || []);
-        if (Array.isArray(rawDevices) && rawDevices.length > 0) {
-          return rawDevices.map((d: any) => this.parseRawDevice(d));
-        }
+    if (response.ok) {
+      const data = (await response.json()) as any;
+      const rawDevices = Array.isArray(data) ? data : (data.devices || data.items || data.data || []);
+      if (Array.isArray(rawDevices) && rawDevices.length > 0) {
+        return rawDevices.map((d: any) => this.parseRawDevice(d));
       }
     }
 
     // 2. Fallback: query homes -> devices in each home
-    if (this.userId) {
-      const homesRes = await fetch(`${this.baseUrl}/v1/users/${this.userId}/homes`, {
-        headers,
-        signal: AbortSignal.timeout(10000),
-      });
+    const homesRes = await fetch(`${this.baseUrl}/v1/users/${this.userId}/homes`, {
+      headers,
+      signal: AbortSignal.timeout(10000),
+    });
 
-      if (homesRes.status === 401) {
-        const error = new Error('Unauthorized');
-        (error as any).status = 401;
-        throw error;
-      }
+    if (homesRes.status === 401) {
+      const error = new Error('Unauthorized');
+      (error as any).status = 401;
+      throw error;
+    }
 
-      if (homesRes.ok) {
-        const homesData = (await homesRes.json()) as any;
-        const homes = Array.isArray(homesData) ? homesData : (homesData.homes || homesData.data || []);
-        const devices: MykoDevice[] = [];
+    if (homesRes.ok) {
+      const homesData = (await homesRes.json()) as any;
+      const homes = Array.isArray(homesData) ? homesData : (homesData.homes || homesData.data || []);
+      const devices: MykoDevice[] = [];
 
-        for (const home of homes) {
-          const homeId = home._id || home.id;
-          if (!homeId) continue;
+      for (const home of homes) {
+        const homeId = home._id || home.id;
+        if (!homeId) continue;
 
-          const devRes = await fetch(`${this.baseUrl}/v1/homes/${homeId}/devices`, {
-            headers,
-            signal: AbortSignal.timeout(10000),
-          });
+        const devRes = await fetch(`${this.baseUrl}/v1/homes/${homeId}/devices`, {
+          headers,
+          signal: AbortSignal.timeout(10000),
+        });
 
-          if (devRes.ok) {
-            const devData = (await devRes.json()) as any;
-            const rawList = Array.isArray(devData) ? devData : (devData.devices || devData.data || []);
-            for (const item of rawList) {
-              devices.push(this.parseRawDevice(item));
-            }
+        if (devRes.ok) {
+          const devData = (await devRes.json()) as any;
+          const rawList = Array.isArray(devData) ? devData : (devData.devices || devData.data || []);
+          for (const item of rawList) {
+            devices.push(this.parseRawDevice(item));
           }
         }
+      }
 
-        if (devices.length > 0) {
-          return devices;
-        }
+      if (devices.length > 0) {
+        return devices;
       }
     }
 

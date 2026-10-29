@@ -20,6 +20,7 @@
       "password": {
         "title": "Myko+ Account Password",
         "type": "string",
+        "format": "password",
         "required": true
       },
       "pollInterval": {

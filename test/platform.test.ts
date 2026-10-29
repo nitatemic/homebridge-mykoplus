@@ -120,10 +120,28 @@ describe('MykoPlusPlatform', () => {
   });
 
   describe('Platform Lifecycle & Constructor', () => {
-    it('should initialize and register didFinishLaunching handler', () => {
+    it('should initialize and register didFinishLaunching and shutdown handlers', () => {
       const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
       expect(platform).toBeDefined();
       expect(mockApi.on).toHaveBeenCalledWith('didFinishLaunching', expect.any(Function));
+      expect(mockApi.on).toHaveBeenCalledWith('shutdown', expect.any(Function));
+    });
+
+    it('should call stopPolling when shutdown event is emitted by Homebridge api', () => {
+      let shutdownHandler: (() => void) | undefined;
+      mockApi.on.mockImplementation((event: string, cb: () => void) => {
+        if (event === 'shutdown') {
+          shutdownHandler = cb;
+        }
+      });
+
+      const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
+      const stopPollingSpy = jest.spyOn(platform, 'stopPolling');
+
+      expect(shutdownHandler).toBeDefined();
+      shutdownHandler!();
+
+      expect(stopPollingSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should initialize HAP Service and Characteristic from api.hap', () => {
