@@ -287,6 +287,42 @@ describe('MykoPlusPlatform', () => {
       didFinishLaunchingCallback();
       expect(discoverSpy).toHaveBeenCalled();
     });
+
+    it('should retry discoverDevices on startup failure and properly register devices once available', async () => {
+      const mockDevice: MykoDevice = {
+        id: 'plug-retry-1',
+        name: 'Retry Plug',
+        type: 'outlet',
+        online: true,
+        power: true,
+      };
+
+      // 1st call fails (e.g. startup network issue)
+      mockClientInstance.getDevices.mockRejectedValueOnce(new Error('Network down on boot'));
+      // 2nd call succeeds once network is up
+      mockClientInstance.getDevices.mockResolvedValueOnce([mockDevice]);
+
+      const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
+
+      await platform.discoverDevices();
+
+      expect(platform.handlers.size).toBe(0);
+      expect(mockApi.registerPlatformAccessories).not.toHaveBeenCalled();
+      expect((platform as any).pollTimer).toBeDefined();
+
+      // Advance timers by the backoff delay
+      const backoffDelay = (platform as any).getNextPollDelayMs();
+      await jest.advanceTimersByTimeAsync(backoffDelay);
+
+      // Now discoverDevices should have retried and registered the device
+      expect(mockApi.registerPlatformAccessories).toHaveBeenCalledWith(
+        PLUGIN_NAME,
+        PLATFORM_NAME,
+        [expect.objectContaining({ UUID: 'mock-uuid-plug-retry-1' })],
+      );
+      expect(platform.handlers.has('mock-uuid-plug-retry-1')).toBe(true);
+      expect((platform as any).consecutivePollFailures).toBe(0);
+    });
   });
 
   describe('Polling Loop & Backoff', () => {
@@ -335,6 +371,15 @@ describe('MykoPlusPlatform', () => {
     });
 
     it('should handle poll error gracefully with log sanitization and exponential backoff', async () => {
+      const mockDevice: MykoDevice = {
+        id: 'plug-1',
+        name: 'Plug 1',
+        type: 'outlet',
+        online: true,
+        power: false,
+      };
+      mockClientInstance.getDevices.mockResolvedValueOnce([mockDevice]);
+
       const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
       await platform.discoverDevices();
 
@@ -378,6 +423,50 @@ describe('MykoPlusPlatform', () => {
       expect((platform as any).pollTimer).toBeDefined();
 
       platform.stopPolling();
+
+      expect((platform as any).pollTimer).toBeUndefined();
+    });
+
+    it('should delegate to discoverDevices in pollDevices if handlers collection is empty', async () => {
+      const mockDevice: MykoDevice = {
+        id: 'plug-new-1',
+        name: 'Late Plug',
+        type: 'outlet',
+        online: true,
+        power: false,
+      };
+      mockClientInstance.getDevices.mockResolvedValueOnce([mockDevice]);
+
+      const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
+      expect(platform.handlers.size).toBe(0);
+
+      await platform.pollDevices();
+
+      expect(platform.handlers.has('mock-uuid-plug-new-1')).toBe(true);
+      expect(mockApi.registerPlatformAccessories).toHaveBeenCalledWith(
+        PLUGIN_NAME,
+        PLATFORM_NAME,
+        [expect.objectContaining({ UUID: 'mock-uuid-plug-new-1' })],
+      );
+    });
+
+    it('should not schedule next poll after stopPolling is called during poll execution', async () => {
+      const platform = new MykoPlusPlatform(mockLog, mockConfig, mockApi);
+      platform.handlers.set('dummy', { updateState: jest.fn() } as any);
+
+      let resolveGetDevices!: (val: any) => void;
+      mockClientInstance.getDevices.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveGetDevices = resolve;
+        }),
+      );
+
+      const pollPromise = platform.pollDevices();
+
+      platform.stopPolling();
+
+      resolveGetDevices([]);
+      await pollPromise;
 
       expect((platform as any).pollTimer).toBeUndefined();
     });

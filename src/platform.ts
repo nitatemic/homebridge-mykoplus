@@ -20,6 +20,7 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
 
   private pollTimer?: NodeJS.Timeout;
   private consecutivePollFailures: number = 0;
+  private isStopped: boolean = false;
 
   constructor(
     public readonly log: Logging,
@@ -52,6 +53,10 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
   }
 
   async discoverDevices(): Promise<void> {
+    if (this.isStopped) {
+      return;
+    }
+
     if (!this.config?.email || !this.config?.password) {
       this.log.error('Missing email or password in configuration. Plugin disabled.');
       return;
@@ -116,21 +121,33 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
       }
 
       this.consecutivePollFailures = 0;
-      this.startPolling();
+      if (!this.isStopped) {
+        this.startPolling();
+      }
     } catch (err: any) {
       this.consecutivePollFailures++;
       this.log.error('Failed to discover devices:', sanitizeLogMessage(err?.message || String(err)));
-      this.startPolling();
+      if (!this.isStopped) {
+        this.clearTimer();
+        const delayMs = this.getNextPollDelayMs();
+        this.pollTimer = setTimeout(() => this.discoverDevices(), delayMs);
+      }
     }
   }
 
   public startPolling(): void {
-    this.stopPolling();
+    this.clearTimer();
+    this.isStopped = false;
     const delayMs = this.getNextPollDelayMs();
     this.pollTimer = setTimeout(() => this.pollDevices(), delayMs);
   }
 
   public stopPolling(): void {
+    this.isStopped = true;
+    this.clearTimer();
+  }
+
+  private clearTimer(): void {
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
       this.pollTimer = undefined;
@@ -138,6 +155,16 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
   }
 
   public async pollDevices(): Promise<void> {
+    if (this.isStopped) {
+      return;
+    }
+
+    if (this.handlers.size === 0) {
+      this.log.debug('No active handlers in pollDevices; delegating to discoverDevices');
+      await this.discoverDevices();
+      return;
+    }
+
     try {
       if (!this.client) {
         return;
@@ -157,7 +184,9 @@ export class MykoPlusPlatform implements DynamicPlatformPlugin {
       this.consecutivePollFailures++;
       this.log.warn('Failed to refresh device states:', sanitizeLogMessage(err?.message || String(err)));
     } finally {
-      this.startPolling();
+      if (!this.isStopped) {
+        this.startPolling();
+      }
     }
   }
 
