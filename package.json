@@ -29,7 +29,7 @@
     "node": ">=18.0.0",
     "homebridge": ">=1.6.0"
   },
-  "author": "Alexandre de Lemeny-Makedone",
+  "author": "Nitatemice",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -58,5 +58,8 @@
     "preset": "ts-jest",
     "testEnvironment": "node",
     "watchman": false
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }
