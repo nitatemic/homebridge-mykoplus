@@ -29,7 +29,7 @@
     "node": ">=18.0.0",
     "homebridge": ">=1.6.0"
   },
-  "author": "Nitatemice",
+  "author": "Nitatemic",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
