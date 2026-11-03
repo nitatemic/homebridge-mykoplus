@@ -29,8 +29,8 @@ Most Kingfisher connected devices use the **Myko+** platform. Until now, integra
 | Device Category | Supported | HomeKit Service | Characteristics |
 | :--- | :---: | :--- | :--- |
 | **Smart Plugs / Sockets** *(Prises connectées)* | ✅ | `Service.Outlet` | `On`, `OutletInUse` |
-| **Heaters / Radiators** | ⏳ Roadmap | `Service.HeaterCooler` / `Thermostat` | *Planned in modular architecture* |
-| **Smart Bulbs & Lighting** | ⏳ Roadmap | `Service.Lightbulb` | *Planned in modular architecture* |
+| **Heaters / Radiators** | ⏳ Roadmap | `Service.HeaterCooler` / `Thermostat` | |
+| **Smart Bulbs & Lighting** | ⏳ Roadmap | `Service.Lightbulb` | |
 
 > Compatible with smart plugs sold across Kingfisher retail brands including **Castorama** (Diall, Blyss), **B&Q**, **Brico Dépôt**, and **Screwfix**.
 
