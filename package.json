@@ -1,6 +1,6 @@
 {
   "name": "homebridge-mykoplus",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Homebridge plugin for Myko+ smart home devices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
