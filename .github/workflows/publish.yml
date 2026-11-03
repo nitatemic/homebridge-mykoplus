@@ -1,43 +1,15 @@
-name: Publish to npm
+name: Release & Publish Package
 
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
 
 jobs:
-  test-and-build:
-    name: Test and Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run test suite
-        run: npm test
-
-      - name: Compile TypeScript
-        run: npm run build
-
   publish:
-    name: Publish to npm (Trusted Publishing)
-    needs: test-and-build
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write # Requis pour la génération du jeton OIDC par GitHub
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,16 +18,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build package
-        run: npm run build
+        run: npm run build --if-present
 
-      - name: Upgrade npm CLI to latest
-        run: npm install -g npm@latest
+      - name: Run tests
+        run: npm test --if-present
 
-      - name: Publish to npm via OIDC (Trusted Publishing)
+      - name: Publish to npm
         run: npm publish --provenance --access public
